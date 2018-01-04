@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>3D视图</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+    <meta name="description" content="Creative - Bootstrap 3 Responsive Admin Template">
+    <meta name="author" content="GeeksLabs">
+    <meta name="keyword" content="Creative, Dashboard, Admin, Template, Theme, Bootstrap, Responsive, Retina, Minimal">
+    <link rel="shortcut icon" href="img/favicon.png">
+
+    <link rel="shortcut icon" href="images/wd.png" />
+    <link rel="bookmark"href="images/wd.png" />
+
+    <!-- Bootstrap CSS -->
+    <link href="stylesheets/bootstrap.min.css" rel="stylesheet">
+    <!-- bootstrap theme -->
+    <link href="stylesheets/bootstrap-theme.css" rel="stylesheet">
+    <!--external css-->
+    <!-- font icon -->
+    <link href="stylesheets/elegant-icons-style.css" rel="stylesheet" />
+    <link href="stylesheets/font-awesome.min.css" rel="stylesheet" />
+    <!-- full calendar css-->
+    <link href="assets/fullcalendar/fullcalendar/bootstrap-fullcalendar.css" rel="stylesheet" />
+    <link href="assets/fullcalendar/fullcalendar/fullcalendar.css" rel="stylesheet" />
+    <!-- easy pie chart-->
+    <link href="assets/jquery-easy-pie-chart/jquery.easy-pie-chart.css" rel="stylesheet" type="text/css" media="screen"/>
+    <!-- owl carousel -->
+    <link rel="stylesheet" href="stylesheets/owl.carousel.css" type="text/css">
+    <link href="stylesheets/jquery-jvectormap-1.2.2.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="stylesheets/fullcalendar.css">
+    <link href="stylesheets/widgets.css" rel="stylesheet">
+    <link href="stylesheets/style.css" rel="stylesheet">
+    <link href="stylesheets/style-responsive.css" rel="stylesheet" />
+    <link href="stylesheets/xcharts.min.css" rel=" stylesheet">
+    <link href="stylesheets/jquery-ui-1.10.4.min.css" rel="stylesheet">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 -->
+      <script src="javascripts/html5shiv.js"></script>
+      <script src="javascripts/respond.min.js"></script>
+      <script src="javascripts/lte-ie7.js"></script>
+
+    <style>
+        body {
+            font-family: Monospace;
+            background-color: #000;
+            color: #fff;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info {
+            color: #fff;
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:block;
+        }
+        #info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+    </style>
+</head>
+
+<body>
+<!--header end-->
+<div id="info">
+    <h1 style="color: #2bb4e8; text-align: center; font-style: italic ">3D Visual System</h1>
+    <span style="color: lightgrey; font-family: 'Comic Sans MS';">
+				当前用户 - <%= currentuser.name %>
+        <a href="/signout"> 退出</a>
+			</span>
+</div>
+
+<script type="text/javascript" src="lib/three.js"></script>
+<script type="text/javascript" src="threejs/controls/TrackballControls.js"></script>
+<script type="text/javascript" src="lib/STLLoader.js"></script>
+<script type="text/javascript" src="threejs/Detector.js"></script>
+<script type="text/javascript" src="lib/stat.js"></script>
+
+<script>
+    if (!Detector.webgl) {
+        Detector.addGetWebGLMessage();
+    }
+
+    var container, stats;
+    var camera, controls, scene, renderer;
+    var cross;
+    var strModelFile;
+
+    setModelFile("models/q1c.stl");
+    init();
+    animate();
+
+    function init() {
+        camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 1e10 );
+        camera.position.z = 0.2;
+        controls = new THREE.TrackballControls( camera );
+        controls.rotateSpeed = 5.0;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 2;
+        controls.noZoom = false;
+        controls.noPan = false;
+        controls.staticMoving = false;
+        controls.dynamicDampingFactor = 0.3;
+
+        scene = new THREE.Scene();
+        scene.add( camera );
+        // light
+        var dirLight = new THREE.DirectionalLight( 0xffffff );
+        dirLight.position.set( 200, 200, 1000 ).normalize();
+        camera.add( dirLight );
+        camera.add( dirLight.target );
+        var material = new THREE.MeshLambertMaterial( { color:0xffffff, side: THREE.DoubleSide } );
+/*
+        var loader = new THREE.STLLoader();
+        loader.addEventListener('load', function ( event ) {
+
+            var geometry = event.content;
+
+            var mesh = new THREE.Mesh( geometry, material );
+            mesh.position.setY( - 0.09 );
+            scene.add( mesh );
+
+        } );
+        //loader.load( "../models/Test.stl" );
+*/
+
+        var loader = new THREE.OBJLoader();//在init函数中，创建loader变量，用于导入模型
+        loader.load('models/a_zone.obj', function(obj) {//第一个表示模型路径，第二个表示完成导入后的回调函数，一般我们需要在这个回调函数中将导入的模型添加到场景中
+            obj.traverse(function(child) {
+                if (child instanceof THREE.Mesh) {
+                    child.material.side = THREE.DoubleSide;
+                }
+            });
+            mesh = obj;//储存到全局变量中
+            scene.add(obj);//将导入的模型添加到场景中
+        });
+/*
+        // 加载模型文件
+        var loader = new THREE.STLLoader();
+        loader.load(strModelFile, stlMesh);
+        function stlMesh(stlGeometry) {
+            var mat = new THREE.MeshLambertMaterial({color:0x007820});
+            mesh = new THREE.Mesh(stlGeometry, mat);
+            scene.add(mesh)
+        }
+*/
+        // renderer
+        renderer = new THREE.WebGLRenderer( { antialias: false } );
+        renderer.setClearColor(0x000000);
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+        container.appendChild( renderer.domElement );
+        stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        container.appendChild(stats.domElement );
+        //
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+    
+    function setModelFile(modelFile) {
+        strModelFile = modelFile;
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        controls.handleResize();
+    }
+
+    function animate() {
+        requestAnimationFrame( animate );
+        controls.update();
+        renderer.render( scene, camera );
+        stats.update();
+    }
+</script>
+
+</body>
+</html>
